@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+*.user
+*.local.*
+secrets/
+artifacts/
+*.pfx
+*.p12
+*.cer
+*.der
+*.log
+captures/
+.uv-cache/
+!src/MynaAuth.Jpki/Roots/*.cer

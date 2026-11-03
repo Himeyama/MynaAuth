@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0-windows</TargetFramework></PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="Roots/*.cer" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="MynaAuth.Jpki.Checks" /></ItemGroup>
+</Project>

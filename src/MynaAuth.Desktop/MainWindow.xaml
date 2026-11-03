@@ -1,0 +1,44 @@
+<Window x:Class="MynaAuth.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MynaAuth — カード・Android 自動判別" Width="920" Height="700" MinWidth="820" MinHeight="650" WindowStartupLocation="CenterScreen"
+        Background="#F3F5F2" FontFamily="Yu Gothic UI" Foreground="#172F29" Loaded="Window_Loaded" Closing="Window_Closing">
+  <Grid Margin="36">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <DockPanel Margin="0,0,0,26">
+      <Border DockPanel.Dock="Right" Background="#E2EAE4" CornerRadius="14" Padding="12,6" VerticalAlignment="Center"><TextBlock Text="PROTOTYPE  /  01" FontSize="11" FontWeight="SemiBold"/></Border>
+      <StackPanel><TextBlock Text="MynaAuth" FontSize="28" FontWeight="Bold"/><TextBlock Text="カードで、あなたを確かめる。" Foreground="#63746D" Margin="0,4,0,0"/></StackPanel>
+    </DockPanel>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="240"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <StackPanel>
+        <TextBlock Text="認証方法" FontSize="12" Foreground="#63746D" Margin="0,0,0,12"/>
+        <ComboBox x:Name="Mode" SelectedIndex="4" FontSize="14" Padding="8" SelectionChanged="Mode_SelectionChanged" AutomationProperties.Name="検証モード">
+          <ComboBoxItem Content="模擬認証"/><ComboBoxItem Content="実機の提示を検出"/><ComboBoxItem Content="マイナカードで認証"/><ComboBoxItem Content="Android で認証（試験）"/>
+          <ComboBoxItem Content="自動（カード／Android）"/>
+        </ComboBox>
+        <TextBlock x:Name="ModeDescription" Margin="0,12,0,24" Foreground="#63746D" FontSize="13"/>
+        <Border Background="#E8EEE8" CornerRadius="12" Padding="18">
+          <StackPanel><TextBlock Text="接続しているリーダー" FontSize="12" Foreground="#63746D"/><TextBlock x:Name="ReaderName" Text="確認中…" Margin="0,8,0,14" FontWeight="SemiBold"/><Button Content="接続を再確認" Click="Refresh_Click" Background="#D4E2D8" Foreground="#172F29" Padding="12,9"/></StackPanel>
+        </Border>
+        <TextBlock Text="Android / Galaxy S25&#x0a;NFC を有効にし、ロック解除した状態でスマホだけをかざしてください。" FontSize="12" Foreground="#63746D" Margin="0,20,0,0"/>
+      </StackPanel>
+      <Border Grid.Column="2" Background="White" CornerRadius="18" Padding="30">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <StackPanel Orientation="Horizontal"><TextBlock x:Name="StepOne" Text="01  PIN 入力" FontWeight="SemiBold"/><TextBlock Text="    →    " Foreground="#A0ADA7"/><TextBlock x:Name="StepTwo" Text="02  カード提示" Foreground="#A0ADA7"/><TextBlock Text="    →    " Foreground="#A0ADA7"/><TextBlock x:Name="StepThree" Text="03  結果" Foreground="#A0ADA7"/></StackPanel>
+          <StackPanel Grid.Row="1" VerticalAlignment="Center">
+            <TextBlock x:Name="Symbol" Text="◇" FontSize="48" Foreground="#176B57" Margin="0,0,0,8"/>
+            <TextBlock x:Name="Heading" Text="4桁の PIN を入力" FontSize="26" FontWeight="SemiBold"/>
+            <TextBlock x:Name="Description" Margin="0,12,0,20" Foreground="#63746D" FontSize="14"/>
+            <PasswordBox x:Name="Pin" MaxLength="4" FontSize="26" Padding="12,8" Width="190" HorizontalAlignment="Left" PasswordChanged="Pin_PasswordChanged" KeyDown="Pin_KeyDown" AutomationProperties.Name="数字4桁の PIN"/>
+            <TextBlock x:Name="Status" Foreground="#916025" Margin="0,12,0,0" FontSize="13" AutomationProperties.LiveSetting="Polite"/>
+          </StackPanel>
+          <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button x:Name="Cancel" Content="やり直す" Click="Cancel_Click" Background="#E8EEE8" Foreground="#172F29" Margin="0,0,10,0"/>
+            <Button x:Name="Next" Content="カード提示へ" Click="Next_Click" IsEnabled="False"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+    <TextBlock Grid.Row="2" Text="Windows へはサインインしません。PIN・個人証明書は保存せず、失敗時は処理名とエラー番号だけを記録します。" FontSize="12" Foreground="#63746D" Margin="0,22,0,0"/>
+  </Grid>
+</Window>

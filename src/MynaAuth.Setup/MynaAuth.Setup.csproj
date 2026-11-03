@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0-windows</TargetFramework><OutputType>WinExe</OutputType><UseWPF>true</UseWPF><PlatformTarget>x64</PlatformTarget><ApplicationManifest>app.manifest</ApplicationManifest></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../MynaAuth.Jpki/MynaAuth.Jpki.csproj"/><ProjectReference Include="../MynaAuth.Windows/MynaAuth.Windows.csproj"/></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="MynaAuth.Setup.Checks"/></ItemGroup>
+</Project>

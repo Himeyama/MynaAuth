@@ -1,0 +1,59 @@
+name: Build MynaAuth installer
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: app
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Himeyama/hsis
+          ref: 059b6ce819416e8c6573f32f474b5d027590920e # v0.4.4
+          path: hsis
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Check version
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $version = [string]$props.Project.PropertyGroup.Version
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and application version must match.' }
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
+      - name: Run synthetic checks
+        run: |
+          foreach ($project in @('MynaAuth.Checks', 'MynaAuth.Jpki.Checks', 'MynaAuth.Windows.Checks', 'MynaAuth.Setup.Checks')) {
+            dotnet run --project "tests/$project" -c Release
+            if ($LASTEXITCODE -ne 0) { throw "$project failed" }
+          }
+      - name: Build HSIS CLI
+        run: |
+          $toolPath = Join-Path $env:RUNNER_TEMP 'hsis-v0.4.4'
+          dotnet publish ../hsis/src/Hsis.Cli/Hsis.Cli.csproj -c Release -r win-x64 --self-contained true -o $toolPath
+          if ($LASTEXITCODE -ne 0) { throw 'HSIS publish failed' }
+          Copy-Item ../hsis/src/Hsis.App/Hsis.ico "$toolPath/Template/src/Hsis.App/Hsis.ico"
+          "HSIS_PATH=$toolPath/hsis.exe" >> $env:GITHUB_ENV
+      - name: Build installer
+        run: |
+          $env:HSIS_7ZIP_PATH = 'C:\Program Files\7-Zip\7z.exe'
+          ./scripts/Build-Installer.ps1 -HsisPath $env:HSIS_PATH
+          ./artifacts/provider-build/Release/ProviderChecks.exe ./artifacts/provider-build/Release/MynaAuthCredentialProvider.dll
+          if ($LASTEXITCODE -ne 0) { throw 'Native checks failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MynaAuth-${{ env.APP_VERSION }}-win-x64
+          path: app/artifacts/installer-*/
+          if-no-files-found: error
+          retention-days: 30

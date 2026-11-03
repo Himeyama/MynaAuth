@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MynaAuth.Core/MynaAuth.Core.csproj" />
+    <ProjectReference Include="../MynaAuth.Jpki/MynaAuth.Jpki.csproj" />
+  </ItemGroup>
+</Project>

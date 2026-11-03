@@ -1,0 +1,4 @@
+LIBRARY MynaAuthCredentialProvider
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
