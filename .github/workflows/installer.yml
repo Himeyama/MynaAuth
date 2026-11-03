@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Himeyama/hsis
-          ref: 059b6ce819416e8c6573f32f474b5d027590920e # v0.4.4
+          ref: e8c86d38bd78f314c0ef52bc436669ceb6598b51 # v0.8.3
           path: hsis
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
@@ -40,10 +40,9 @@ jobs:
           }
       - name: Build HSIS CLI
         run: |
-          $toolPath = Join-Path $env:RUNNER_TEMP 'hsis-v0.4.4'
+          $toolPath = Join-Path $env:RUNNER_TEMP 'hsis-v0.8.3'
           dotnet publish ../hsis/src/Hsis.Cli/Hsis.Cli.csproj -c Release -r win-x64 --self-contained true -o $toolPath
           if ($LASTEXITCODE -ne 0) { throw 'HSIS publish failed' }
-          Copy-Item ../hsis/src/Hsis.App/Hsis.ico "$toolPath/Template/src/Hsis.App/Hsis.ico"
           "HSIS_PATH=$toolPath/hsis.exe" >> $env:GITHUB_ENV
       - name: Build installer
         run: |
