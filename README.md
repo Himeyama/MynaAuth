@@ -2,7 +2,7 @@
 
 マイナンバーカードの利用者証明用電子証明書を用いた Windows サインインを行うソフトウェア。
 
-**実物マイナンバーカードと Android 搭載電子証明書を自動判別して認証します。所有者による両方の動作確認後、Windows ログイン用 Credential Provider と設定アプリを追加しました。Windows への登録と実ログオン確認は、設定アプリでの資格情報・カード登録後に行います。**
+<img width="600" src="https://github.com/user-attachments/assets/4ea25d0b-6996-4b88-90ea-3b57b8722dc2" />
 
 ## Windows ログイン画面の開発用ビルド
 
