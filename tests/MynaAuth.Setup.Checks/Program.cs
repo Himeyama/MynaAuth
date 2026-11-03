@@ -25,20 +25,23 @@ internal static class Program
         Button next = (Button)window.FindName("Next");
         Button back = (Button)window.FindName("Back");
         Button enroll = (Button)window.FindName("Enroll");
-        CheckBox recovery = (CheckBox)window.FindName("RecoveryConfirmed");
         PasswordBox password = (PasswordBox)window.FindName("WindowsPassword");
         PasswordBox pin = (PasswordBox)window.FindName("CardPin");
         TextBlock status = (TextBlock)window.FindName("Status");
         FrameworkElement windowsPanel = (FrameworkElement)window.FindName("WindowsPanel");
         FrameworkElement cardPanel = (FrameworkElement)window.FindName("CardPanel");
-        Capture(window, "setup-v2-recovery");
-        Click(next);
-        Check(status.Text.Contains("チェック") && backend.ValidateCalls == 0, "Require explicit recovery sign-in confirmation");
-        recovery.IsChecked = true;
-        Click(next);
-        Check(status.Text.Contains("確認記録") && backend.LastStage == SetupStage.Recovery, "Distinguish missing recovery record");
-        backend.RecoveryReady = true;
-        Click(next);
+        Check(window.FindName("RecoveryPanel") is null && windowsPanel.Visibility == Visibility.Visible,
+            "Start with Windows verification without a recovery step");
+        Check(window.WindowStyle == WindowStyle.None && System.Windows.Shell.WindowChrome.GetWindowChrome(window) is not null,
+            "Use custom window chrome");
+        Check(((TextBlock)window.FindName("StepLabel0")).Text == "Windows の確認",
+            "Show step names without numbers");
+        ProcessStartInfo fresh = SetupBackend.CreateInstallStartInfo(false, @"C:\Synthetic Folder\app");
+        ProcessStartInfo update = SetupBackend.CreateInstallStartInfo(true, @"C:\Synthetic Folder\app");
+        Check(fresh.ArgumentList.Contains(@"C:\Synthetic Folder\app\Install-LogonProvider.ps1") && !fresh.ArgumentList.Contains("-RecoverySignInConfirmed"),
+            "Fresh install has no recovery-confirmation requirement");
+        Check(update.ArgumentList.Contains(@"C:\Synthetic Folder\app\Update-LogonProvider.ps1") && update.ArgumentList[^2] == "-BundlePath" && update.ArgumentList[^1] == @"C:\Synthetic Folder\app",
+            "Existing provider uses the safe update path and preserves a bundle path with spaces");
         Check(windowsPanel.Visibility == Visibility.Visible && cardPanel.Visibility == Visibility.Collapsed, "Show only Windows verification before card entry");
         Capture(window, "setup-v2-windows");
         password.Password = "Synthetic test only!";
@@ -52,6 +55,7 @@ internal static class Program
         Click(next);
         Check(cardPanel.Visibility == Visibility.Visible && !next.IsEnabled, "Enter card step only after Windows verification");
         Check(backend.LastAccount == Environment.MachineName + @"\SyntheticLocal", "Validate local account without substituting MicrosoftAccount identity");
+        Check((string)next.Content == "登録完了", "Use the requested registration completion label");
         Capture(window, "setup-v2-card");
         pin.Password = "2468";
         backend.CardStatus = CardAuthenticationStatus.InvalidPin;
@@ -109,7 +113,6 @@ internal static class Program
 
     private sealed class FakeBackend : ISetupBackend
     {
-        public bool RecoveryReady { get; set; }
         public int WindowsError { get; set; } = 1326;
         public CardAuthenticationStatus CardStatus { get; set; }
         public bool InstallSucceeds { get; set; }
@@ -122,7 +125,6 @@ internal static class Program
         public SetupStage LastStage { get; private set; }
         public int LastCode { get; private set; }
         public string FindEmail() => "synthetic@example.invalid";
-        public RecoveryCheck CheckRecovery() => new(RecoveryReady, RecoveryReady ? "S-1-5-21-1-2-3-1002" : null, 2);
         public Task<WindowsAccountValidation> ValidateAsync(string account, SecureString password)
         {
             ValidateCalls++;

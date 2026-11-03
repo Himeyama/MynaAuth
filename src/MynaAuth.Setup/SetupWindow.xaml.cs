@@ -16,7 +16,6 @@ public partial class SetupWindow : Window
     private readonly HashSet<string> _registered = [];
     private readonly HashSet<string> _mediaNames = [];
     private SecureString? _password;
-    private string? _recoverySid;
     private string? _sid;
     private string _account = "";
     private int _step;
@@ -35,17 +34,17 @@ public partial class SetupWindow : Window
     private void ShowStep(int step)
     {
         _step = step;
-        FrameworkElement[] panels = [RecoveryPanel, WindowsPanel, CardPanel, ReviewPanel];
-        TextBlock[] labels = [StepLabel0, StepLabel1, StepLabel2, StepLabel3];
+        FrameworkElement[] panels = [WindowsPanel, CardPanel, ReviewPanel];
+        TextBlock[] labels = [StepLabel0, StepLabel1, StepLabel2];
         for (int index = 0; index < panels.Length; index++)
         {
             panels[index].Visibility = index == step ? Visibility.Visible : Visibility.Collapsed;
             labels[index].Foreground = index == step ? new SolidColorBrush(Color.FromRgb(23, 107, 87)) : Brushes.Gray;
             labels[index].FontWeight = index == step ? FontWeights.SemiBold : FontWeights.Normal;
         }
-        Next.Content = step switch { 0 => "確認して次へ", 1 => "パスワードを確認して次へ", 2 => "登録完了 → 次へ", _ => "ログイン画面へ追加" };
-        Next.IsEnabled = step != 2 || _registered.Count > 0;
-        Back.IsEnabled = step > 0 && (step == 3 || _registered.Count == 0);
+        Next.Content = step switch { 0 => "パスワードを確認して次へ", 1 => "登録完了", _ => "ログイン画面へ追加" };
+        Next.IsEnabled = step != 1 || _registered.Count > 0;
+        Back.IsEnabled = step > 0 && (step == 2 || _registered.Count == 0);
     }
 
     private void Message(string text, bool error = false)
@@ -56,8 +55,8 @@ public partial class SetupWindow : Window
     private void Busy(bool busy)
     {
         _busy = busy;
-        Next.IsEnabled = !busy && (_step != 2 || _registered.Count > 0);
-        Back.IsEnabled = !busy && _step > 0 && (_step == 3 || _registered.Count == 0);
+        Next.IsEnabled = !busy && (_step != 1 || _registered.Count > 0);
+        Back.IsEnabled = !busy && _step > 0 && (_step == 2 || _registered.Count == 0);
         Enroll.IsEnabled = !busy;
         Email.IsEnabled = !busy;
         WindowsPassword.IsEnabled = !busy;
@@ -66,26 +65,10 @@ public partial class SetupWindow : Window
     private async void Next_Click(object sender, RoutedEventArgs e)
     {
         if (_busy) return;
-        SetupStage stage = _step switch { 0 => SetupStage.Recovery, 1 => SetupStage.WindowsAccount, _ => SetupStage.Install };
+        SetupStage stage = _step switch { 0 => SetupStage.WindowsAccount, _ => SetupStage.Install };
         try
         {
             if (_step == 0)
-            {
-                if (RecoveryConfirmed.IsChecked != true) { Message("復旧用ユーザーで実際にサインインできることを確認し、チェックを入れてください。", true); return; }
-                RecoveryCheck recovery = _backend.CheckRecovery();
-                if (!recovery.Ready)
-                {
-                    _backend.RecordFailure(stage, recovery.Code);
-                    Message(recovery.Code == 5 ? "管理者権限で起動できていません。設定アプリを右クリックし「管理者として実行」を選んでください。"
-                        : "復旧ユーザーの確認記録が見つかりません。復旧スクリプトを -VerifyOnly 付きで実行してください。", true);
-                    return;
-                }
-                _recoverySid = recovery.Sid;
-                ShowStep(1);
-                Message("次は Windows パスワードだけを確認します。カードの PIN はまだ入力しません。");
-                return;
-            }
-            if (_step == 1)
             {
                 string email = Email.Text.Trim();
                 const string Prefix = "MicrosoftAccount\\";
@@ -117,18 +100,17 @@ public partial class SetupWindow : Window
                     Message(DescribeWindowsFailure(validation.ErrorCode), true);
                     return;
                 }
-                if (validation.Sid == _recoverySid) { Message("復旧用ユーザーは登録対象にできません。普段の Windows ユーザーを指定してください。", true); return; }
                 _password?.Dispose(); _password = entered.Copy();
                 _sid = validation.Sid; _account = account;
-                ShowStep(2);
+                ShowStep(1);
                 Message("Windows の確認が完了しました。次は登録したいカードかスマホの PIN を入力してください。");
                 return;
             }
-            if (_step == 2)
+            if (_step == 1)
             {
                 if (_registered.Count == 0) { Message("先にカードまたは Android を1つ登録してください。", true); return; }
                 ReviewSummary.Text = $"登録先：{Email.Text.Trim()}\n登録済み：{string.Join("、", _mediaNames)}";
-                ShowStep(3);
+                ShowStep(2);
                 Message("内容を確認してください。次のボタンで初めてログイン画面へ追加します。");
                 return;
             }
@@ -153,7 +135,7 @@ public partial class SetupWindow : Window
 
     private async void Enroll_Click(object sender, RoutedEventArgs e)
     {
-        if (_busy || _step != 2 || _password is null || _sid is null) return;
+        if (_busy || _step != 1 || _password is null || _sid is null) return;
         byte[] pin = ReadPin();
         SetupStage stage = SetupStage.Card;
         try
@@ -185,7 +167,7 @@ public partial class SetupWindow : Window
             _mediaNames.Add(result.DetectedDevice == CardDevice.Android ? "Android" : "マイナカード");
             Registered.Text = "登録済み：" + string.Join("、", _mediaNames);
             Enroll.Content = "別の媒体も登録する";
-            Message("登録できました。両方使う場合はもう一方を登録できます。準備できたら「次へ」を押してください。");
+            Message("登録できました。両方使う場合はもう一方を登録できます。準備できたら「登録完了」を押してください。");
         }
         catch (Exception error)
         {
@@ -226,14 +208,17 @@ public partial class SetupWindow : Window
         1331 => "対象の Windows アカウントが無効になっています（エラー1331）。",
         _ => $"Windows パスワードの確認に失敗しました（エラー{code}）。カードの確認にはまだ進んでいません。"
     };
-    private static string StageName(SetupStage stage) => stage switch { SetupStage.Recovery => "復旧確認", SetupStage.WindowsAccount => "Windows パスワード確認", SetupStage.Save => "保護領域への保存", SetupStage.Install => "ログイン画面への追加", _ => "カード確認" };
+    private static string StageName(SetupStage stage) => stage switch { SetupStage.WindowsAccount => "Windows パスワード確認", SetupStage.Save => "保護領域への保存", SetupStage.Install => "ログイン画面への追加", _ => "カード確認" };
 
     private void Back_Click(object sender, RoutedEventArgs e)
     {
         if (_busy || _step == 0) return;
-        if (_step <= 2) { _password?.Dispose(); _password = null; _sid = null; WindowsPassword.Clear(); }
+        if (_step <= 1) { _password?.Dispose(); _password = null; _sid = null; WindowsPassword.Clear(); }
         ShowStep(_step - 1); Message("表示中の手順を確認してください。");
     }
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void Maximize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
     private void CancelCard_Click(object sender, RoutedEventArgs e) => _pending?.Cancel();
     private void Window_Closing(object? sender, CancelEventArgs e)
     {

@@ -9,13 +9,11 @@ using MynaAuth.Windows;
 
 namespace MynaAuth.Setup;
 
-internal enum SetupStage { Recovery, WindowsAccount, Card, Save, Install }
-internal sealed record RecoveryCheck(bool Ready, string? Sid, int Code);
+internal enum SetupStage { WindowsAccount, Card, Save, Install }
 
 internal interface ISetupBackend
 {
     string FindEmail();
-    RecoveryCheck CheckRecovery();
     Task<WindowsAccountValidation> ValidateAsync(string account, SecureString password);
     Task<CardAuthenticationResult> AuthenticateAsync(byte[] pin, CancellationToken token);
     void Save(string sid, string account, SecureString password, string credentialId);
@@ -43,17 +41,6 @@ internal sealed class SetupBackend : ISetupBackend
         finally { _ = NetApiBufferFree(buffer); }
     }
 
-    public RecoveryCheck CheckRecovery()
-    {
-        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
-        if (!new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator)) return new(false, null, 5);
-        using RegistryKey? marker = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\MynaAuth");
-        if (marker?.GetValue("RecoverySid") is not string sid || marker.GetValue("RecoveryVerifiedUtc") is not string)
-            return new(false, null, 2);
-        _ = new SecurityIdentifier(sid);
-        return new(true, sid, 0);
-    }
-
     public Task<WindowsAccountValidation> ValidateAsync(string account, SecureString password) =>
         Task.Run(() => WindowsSecret.TryValidateAccount(account, password));
     public Task<CardAuthenticationResult> AuthenticateAsync(byte[] pin, CancellationToken token) =>
@@ -66,12 +53,26 @@ internal sealed class SetupBackend : ISetupBackend
 
     public async Task<bool> InstallAsync()
     {
-        ProcessStartInfo start = new("powershell.exe") { UseShellExecute = false, CreateNoWindow = true };
-        foreach (string argument in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(AppContext.BaseDirectory, "Install-LogonProvider.ps1"), "-RecoverySignInConfirmed" })
-            start.ArgumentList.Add(argument);
+        using RegistryKey? provider = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{37167329-B6D8-4379-90A9-0D350F82F31A}");
+        ProcessStartInfo start = CreateInstallStartInfo(provider is not null, AppContext.BaseDirectory);
         using Process process = Process.Start(start) ?? throw new InvalidOperationException();
         await process.WaitForExitAsync().ConfigureAwait(false);
         return process.ExitCode == 0;
+    }
+
+    internal static ProcessStartInfo CreateInstallStartInfo(bool providerInstalled, string bundlePath)
+    {
+        string powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
+        ProcessStartInfo start = new(powershell) { UseShellExecute = false, CreateNoWindow = true };
+        string script = providerInstalled ? "Update-LogonProvider.ps1" : "Install-LogonProvider.ps1";
+        foreach (string argument in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(bundlePath, script) })
+            start.ArgumentList.Add(argument);
+        if (providerInstalled)
+        {
+            start.ArgumentList.Add("-BundlePath");
+            start.ArgumentList.Add(bundlePath);
+        }
+        return start;
     }
 
     public void RecordFailure(SetupStage stage, int code)

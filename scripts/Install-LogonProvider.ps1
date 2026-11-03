@@ -1,19 +1,11 @@
 ﻿#Requires -Version 5.1
 #Requires -RunAsAdministrator
 [CmdletBinding(SupportsShouldProcess)]
-param([switch]$RecoverySignInConfirmed)
+param()
 $ErrorActionPreference = 'Stop'
 if (-not [Environment]::Is64BitProcess) { throw 'Use 64-bit PowerShell.' }
-if (-not $RecoverySignInConfirmed) { throw 'First verify a real password sign-in with the recovery account.' }
-$marker = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\MynaAuth'
-if (-not $marker.RecoverySid -or -not $marker.RecoveryVerifiedUtc) { throw 'Recovery account verification is missing.' }
-$recovery = Get-LocalUser -SID $marker.RecoverySid
-if (-not $recovery.Enabled) { throw 'Recovery account is disabled.' }
-$recoveryAdmin = Get-LocalGroupMember -SID 'S-1-5-32-544' | Where-Object { $_.SID.Value -eq $recovery.SID.Value }
-if (-not $recoveryAdmin) { throw 'Recovery account is not an administrator.' }
 $accounts = @(Get-ChildItem -LiteralPath 'HKLM:\SOFTWARE\MynaAuth\Accounts' -ErrorAction SilentlyContinue)
 if ($accounts.Count -eq 0) { throw 'Enroll a card and Windows account first.' }
-if ($accounts.PSChildName -contains $marker.RecoverySid) { throw 'The recovery account must not be enrolled.' }
 
 $source = [IO.Path]::GetFullPath($PSScriptRoot)
 $manifestPath = Join-Path $source 'bundle-manifest.json'
