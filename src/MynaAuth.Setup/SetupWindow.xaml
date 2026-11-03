@@ -1,66 +1,93 @@
 <Window x:Class="MynaAuth.Setup.SetupWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="MynaAuth — サインイン設定" Width="920" Height="720" MinWidth="860" MinHeight="680" Background="#F3F5F2" Foreground="#172F29" FontFamily="Yu Gothic UI" WindowStyle="None" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
+ Title="MynaAuth — サインイン設定" Width="920" Height="720" MinWidth="860" MinHeight="680" WindowStyle="None" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
  <WindowChrome.WindowChrome><WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" UseAeroCaptionButtons="False"/></WindowChrome.WindowChrome>
  <Window.Resources>
   <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
-  <Style TargetType="TextBox"><Setter Property="Padding" Value="12,10"/><Setter Property="FontSize" Value="16"/></Style>
-  <Style TargetType="PasswordBox"><Setter Property="Padding" Value="12,10"/><Setter Property="FontSize" Value="20"/></Style>
-  <Style TargetType="Button">
-   <Setter Property="Padding" Value="20,12"/><Setter Property="FontSize" Value="14"/><Setter Property="Cursor" Value="Hand"/>
-   <Setter Property="Background" Value="#176B57"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderThickness" Value="0"/>
-   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Surface" CornerRadius="8" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.4"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.85"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+  <Style x:Key="CaptionButtonStyle" TargetType="Button">
+   <Setter Property="Width" Value="46"/>
+   <Setter Property="Height" Value="32"/>
+   <Setter Property="VerticalAlignment" Value="Top"/>
+   <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+   <Setter Property="FontSize" Value="10"/>
+   <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+   <Setter Property="Background" Value="Transparent"/>
+   <Setter Property="Template">
+    <Setter.Value>
+     <ControlTemplate TargetType="Button">
+      <Border x:Name="Surface" Background="{TemplateBinding Background}">
+       <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <ControlTemplate.Triggers>
+       <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/></Trigger>
+       <Trigger Property="IsPressed" Value="True"><Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/></Trigger>
+       <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}"/><Setter TargetName="Surface" Property="BorderThickness" Value="1"/></Trigger>
+      </ControlTemplate.Triggers>
+     </ControlTemplate>
+    </Setter.Value>
+   </Setter>
+  </Style>
+  <Style x:Key="CloseCaptionButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+   <Style.Triggers>
+    <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#C42B1C"/><Setter Property="Foreground" Value="White"/></Trigger>
+   </Style.Triggers>
+  </Style>
+  <Style x:Key="MaximizeCaptionButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+   <Setter Property="Content" Value="&#xE922;"/>
+   <Style.Triggers>
+    <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized"><Setter Property="Content" Value="&#xE923;"/></DataTrigger>
+   </Style.Triggers>
   </Style>
  </Window.Resources>
  <DockPanel>
   <Grid DockPanel.Dock="Top" Height="44">
-   <TextBlock Text="MynaAuth — サインイン設定" VerticalAlignment="Center" Margin="20,0,140,0" FontSize="13"/>
+   <TextBlock Text="MynaAuth — サインイン設定" VerticalAlignment="Center" Margin="20,0,158,0" FontSize="13"/>
    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
-    <Button x:Name="MinimizeWindow" Content="&#xE921;" FontFamily="Segoe MDL2 Assets" Width="46" Padding="0" Background="Transparent" Foreground="#172F29" Click="Minimize_Click" AutomationProperties.Name="最小化"/>
-    <Button x:Name="MaximizeWindow" Content="&#xE922;" FontFamily="Segoe MDL2 Assets" Width="46" Padding="0" Background="Transparent" Foreground="#172F29" Click="Maximize_Click" AutomationProperties.Name="最大化または元に戻す"/>
-    <Button x:Name="CloseWindow" Content="&#xE8BB;" FontFamily="Segoe MDL2 Assets" Width="46" Padding="0" Background="Transparent" Foreground="#172F29" Click="Close_Click" AutomationProperties.Name="閉じる"/>
+    <Button x:Name="MinimizeWindow" Content="&#xE921;" Style="{StaticResource CaptionButtonStyle}" Click="Minimize_Click" AutomationProperties.Name="最小化"/>
+    <Button x:Name="MaximizeWindow" Style="{StaticResource MaximizeCaptionButtonStyle}" Click="Maximize_Click" AutomationProperties.Name="最大化または元に戻す"/>
+    <Button x:Name="CloseWindow" Content="&#xE8BB;" Style="{StaticResource CloseCaptionButtonStyle}" Click="Close_Click" AutomationProperties.Name="閉じる"/>
    </StackPanel>
   </Grid>
  <Grid Margin="32,16,32,24">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <StackPanel Margin="0,0,0,24"><TextBlock Text="MynaAuth" FontSize="26" FontWeight="Bold"/><TextBlock Text="Windows サインインの設定" Foreground="#63746D" Margin="0,4,0,0"/></StackPanel>
+  <StackPanel Margin="0,0,0,24"><TextBlock Text="MynaAuth" FontSize="26" FontWeight="Bold"/><TextBlock Text="Windows サインインの設定" Margin="0,4,0,0"/></StackPanel>
   <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
    <StackPanel Margin="0,10,0,0">
     <TextBlock x:Name="StepLabel0" Text="Windows の確認" FontSize="16" Margin="0,0,0,24"/>
     <TextBlock x:Name="StepLabel1" Text="カードの登録" FontSize="16" Margin="0,0,0,24"/>
     <TextBlock x:Name="StepLabel2" Text="ログイン画面へ追加" FontSize="16"/>
-    <TextBlock Text="一度に1つずつ確認します。&#x0a;PIN・平文パスワードは記録しません。" FontSize="12" Foreground="#63746D" Margin="0,36,12,0"/>
+    <TextBlock Text="一度に1つずつ確認します。&#x0a;PIN・平文パスワードは記録しません。" FontSize="12" Margin="0,36,12,0"/>
    </StackPanel>
-   <Border Grid.Column="2" Background="White" CornerRadius="16" Padding="28">
+   <Border Grid.Column="2" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="28">
     <Grid>
      <StackPanel x:Name="WindowsPanel" Visibility="Collapsed" VerticalAlignment="Center">
       <TextBlock Text="Windows パスワードを確認" FontSize="25" FontWeight="SemiBold"/>
-      <TextBlock Text="ここでは、この PC の Windows サインインに使えるパスワードを確認します。" Foreground="#63746D" Margin="0,12,0,22"/>
+      <TextBlock Text="ここでは、この PC の Windows サインインに使えるパスワードを確認します。" Margin="0,12,0,22"/>
       <TextBlock Text="Windows アカウント（この PC のユーザーは自動入力）" Margin="0,0,0,8"/>
       <TextBox x:Name="Email" AutomationProperties.Name="Windows アカウント"/>
       <TextBlock Text="この PC の Windows サインイン用パスワード" Margin="0,16,0,8"/>
       <PasswordBox x:Name="WindowsPassword" MaxLength="512" AutomationProperties.Name="この PC の Windows サインイン用パスワード"/>
-      <TextBlock Text="この PC のユーザーのパスワードを入力してください。Windows Hello の PIN は使えません。&#x0a;Microsoft アカウントを指定する場合は、メールアドレスを入力できます。" Foreground="#63746D" Margin="0,12,0,0" TextWrapping="Wrap"/>
+      <TextBlock Text="この PC のユーザーのパスワードを入力してください。Windows Hello の PIN は使えません。&#x0a;Microsoft アカウントを指定する場合は、メールアドレスを入力できます。" Margin="0,12,0,0" TextWrapping="Wrap"/>
      </StackPanel>
      <StackPanel x:Name="CardPanel" Visibility="Collapsed" VerticalAlignment="Center">
       <TextBlock Text="カード／Android を登録" FontSize="25" FontWeight="SemiBold"/>
-      <TextBlock Text="Windows の確認は完了しました。登録したい媒体の PIN を入力してから、登録を開始してください。" Foreground="#63746D" Margin="0,12,0,20"/>
+      <TextBlock Text="Windows の確認は完了しました。登録したい媒体の PIN を入力してから、登録を開始してください。" Margin="0,12,0,20"/>
       <TextBlock Text="利用者証明用 PIN（数字4桁）" Margin="0,0,0,8"/>
       <PasswordBox x:Name="CardPin" Width="180" HorizontalAlignment="Left" MaxLength="4" AutomationProperties.Name="カードかスマホの利用者証明用 PIN"/>
-      <TextBlock Text="カード用とスマホ用の PIN は異なる場合があります。&#x0a;3回連続の誤入力でロックされます。" Foreground="#63746D" FontSize="13" Margin="0,12,0,18"/>
-      <StackPanel Orientation="Horizontal"><Button x:Name="Enroll" Content="登録を開始 → かざす" Click="Enroll_Click"/><Button x:Name="CancelCard" Content="中止" Click="CancelCard_Click" Background="#E8EEE8" Foreground="#172F29" Margin="12,0,0,0" Visibility="Collapsed"/></StackPanel>
-      <TextBlock x:Name="Registered" Margin="0,18,0,0" Foreground="#176B57"/>
+      <TextBlock Text="カード用とスマホ用の PIN は異なる場合があります。&#x0a;3回連続の誤入力でロックされます。" FontSize="13" Margin="0,12,0,18"/>
+      <StackPanel Orientation="Horizontal"><Button x:Name="Enroll" Content="登録" Click="Enroll_Click"/><Button x:Name="CancelCard" Content="中止" Click="CancelCard_Click" Margin="12,0,0,0" Visibility="Collapsed"/></StackPanel>
+      <TextBlock x:Name="Registered" Margin="0,18,0,0"/>
      </StackPanel>
      <StackPanel x:Name="ReviewPanel" Visibility="Collapsed" VerticalAlignment="Center">
       <TextBlock x:Name="ReviewTitle" Text="ログイン画面へ追加します" FontSize="25" FontWeight="SemiBold"/>
       <TextBlock x:Name="ReviewSummary" Margin="0,18,0,22" FontSize="15"/>
-      <TextBlock Text="Windows パスワードは暗号化して保管します。カード／スマホの PIN は保存しません。標準のパスワードと Windows Hello は引き続き利用できます。" Foreground="#63746D" Margin="0,0,0,16"/>
-      <TextBlock Text="このボタンを押すと Windows のログイン画面に MynaAuth が追加されます。自動でロック・再起動はしません。" Foreground="#63746D"/>
+      <TextBlock Text="Windows パスワードは暗号化して保管します。カード／スマホの PIN は保存しません。標準のパスワードと Windows Hello は引き続き利用できます。" Margin="0,0,0,16"/>
+      <TextBlock Text="このボタンを押すと Windows のログイン画面に MynaAuth が追加されます。自動でロック・再起動はしません。"/>
      </StackPanel>
     </Grid>
    </Border>
   </Grid>
-  <Border x:Name="StatusSurface" Grid.Row="2" Background="#E8EEE8" CornerRadius="8" Padding="14,12" Margin="205,16,0,16"><TextBlock x:Name="Status" Text="Windows アカウントとパスワードを確認してください。" AutomationProperties.LiveSetting="Polite"/></Border>
-  <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"><Button x:Name="Back" Content="戻る" Click="Back_Click" Background="#E8EEE8" Foreground="#172F29" Margin="0,0,12,0" IsEnabled="False"/><Button x:Name="Next" Content="確認して次へ" Click="Next_Click"/></StackPanel>
+  <Border x:Name="StatusSurface" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Grid.Row="2" CornerRadius="8" Padding="14,12" Margin="205,16,0,16"><TextBlock x:Name="Status" Text="Windows アカウントとパスワードを確認してください。" AutomationProperties.LiveSetting="Polite"/></Border>
+  <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"><Button x:Name="Back" Content="戻る" Click="Back_Click" Margin="0,0,12,0" IsEnabled="False"/><Button x:Name="Next" Content="確認して次へ" Style="{DynamicResource AccentButtonStyle}" Click="Next_Click"/></StackPanel>
  </Grid>
  </DockPanel>
 </Window>

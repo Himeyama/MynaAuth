@@ -53,11 +53,19 @@ internal sealed class SetupBackend : ISetupBackend
 
     public async Task<bool> InstallAsync()
     {
+        ValidateInstallBundle(AppContext.BaseDirectory);
         using RegistryKey? provider = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{37167329-B6D8-4379-90A9-0D350F82F31A}");
         ProcessStartInfo start = CreateInstallStartInfo(provider is not null, AppContext.BaseDirectory);
         using Process process = Process.Start(start) ?? throw new InvalidOperationException();
         await process.WaitForExitAsync().ConfigureAwait(false);
         return process.ExitCode == 0;
+    }
+
+    internal static void ValidateInstallBundle(string bundlePath)
+    {
+        foreach (string name in new[] { "Install-LogonProvider.ps1", "Update-LogonProvider.ps1", "bundle-manifest.json", "MynaAuthCredentialProvider.dll", "MynaAuth.LogonHost.exe" })
+            if (!File.Exists(Path.Combine(bundlePath, name)))
+                throw new FileNotFoundException("Installation bundle is incomplete.");
     }
 
     internal static ProcessStartInfo CreateInstallStartInfo(bool providerInstalled, string bundlePath)

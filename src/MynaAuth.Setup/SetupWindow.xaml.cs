@@ -4,7 +4,6 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using MynaAuth.Jpki;
 using MynaAuth.Windows;
 
@@ -39,7 +38,8 @@ public partial class SetupWindow : Window
         for (int index = 0; index < panels.Length; index++)
         {
             panels[index].Visibility = index == step ? Visibility.Visible : Visibility.Collapsed;
-            labels[index].Foreground = index == step ? new SolidColorBrush(Color.FromRgb(23, 107, 87)) : Brushes.Gray;
+            labels[index].SetResourceReference(TextBlock.ForegroundProperty,
+                index == step ? "TextFillColorPrimaryBrush" : "TextFillColorSecondaryBrush");
             labels[index].FontWeight = index == step ? FontWeights.SemiBold : FontWeights.Normal;
         }
         Next.Content = step switch { 0 => "パスワードを確認して次へ", 1 => "登録完了", _ => "ログイン画面へ追加" };
@@ -50,7 +50,8 @@ public partial class SetupWindow : Window
     private void Message(string text, bool error = false)
     {
         Status.Text = text;
-        StatusSurface.Background = new SolidColorBrush(error ? Color.FromRgb(253, 235, 230) : Color.FromRgb(232, 238, 232));
+        StatusSurface.SetResourceReference(Border.BackgroundProperty,
+            error ? "SystemFillColorCriticalBackgroundBrush" : "CardBackgroundFillColorDefaultBrush");
     }
     private void Busy(bool busy)
     {
@@ -124,6 +125,11 @@ public partial class SetupWindow : Window
                 Next.Visibility = Visibility.Collapsed; Back.Visibility = Visibility.Collapsed;
             }
             else { _backend.RecordFailure(stage, 1); Message("ログイン画面への追加に失敗しました。カード登録とは別の導入段階のエラーです。標準のログイン方法を使えます。", true); }
+        }
+        catch (System.IO.FileNotFoundException error) when (stage == SetupStage.Install)
+        {
+            _backend.RecordFailure(stage, error.HResult);
+            Message("導入用ファイルが不足しています。設定アプリ単体ではログイン画面へ追加できません。配布用ファイル一式を展開し、その中の MynaAuth.Setup.exe を起動してください。カードの登録情報は保持されています。", true);
         }
         catch (Exception error)
         {
@@ -216,10 +222,10 @@ public partial class SetupWindow : Window
         if (_step <= 1) { _password?.Dispose(); _password = null; _sid = null; WindowsPassword.Clear(); }
         ShowStep(_step - 1); Message("表示中の手順を確認してください。");
     }
+    private void CancelCard_Click(object sender, RoutedEventArgs e) => _pending?.Cancel();
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void Maximize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
-    private void CancelCard_Click(object sender, RoutedEventArgs e) => _pending?.Cancel();
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         if (_busy) { e.Cancel = true; _pending?.Cancel(); Message("処理を終了しています。完了後に閉じてください。"); return; }

@@ -12,7 +12,7 @@ if (Test-Path -LiteralPath $comKey) { Remove-Item -LiteralPath $comKey -Recurse 
 if ($RemoveEnrollment) {
     $library = Join-Path $env:ProgramFiles 'MynaAuthSignIn\MynaAuth.Windows.dll'
     if (-not (Test-Path -LiteralPath $library)) { throw 'Use the setup application to remove protected credentials.' }
-    # Secret removal uses the .NET 8 setup process, never sends a password in arguments.
+    # Secret removal uses the setup process, never sends a password in arguments.
     $setup = Join-Path $env:ProgramFiles 'MynaAuthSignIn\MynaAuth.Setup.exe'
     $cleanupProcess = Start-Process -FilePath $setup -ArgumentList '--remove-enrollment' -PassThru -Wait -WindowStyle Hidden
     if ($cleanupProcess.ExitCode -ne 0) { throw 'Credential cleanup failed. Provider registration was removed.' }

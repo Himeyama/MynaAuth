@@ -25,7 +25,7 @@ Windows のアプリ一覧からのアンインストールは、設定アプリ
 
 ## 開発者向けビルド
 
-.NET 8 SDK 以降、Visual Studio 2022 の C++ ビルドツール、CMake、NuGet 接続が必要です。[HSIS v0.8.3](https://github.com/Himeyama/hsis/tree/v0.8.3) の CLI を次のように発行し、`hsis.exe` と `Template` を一緒に保持します。アイコンは CLI のテンプレートに含まれるため、手動コピーは不要です。
+.NET 9 SDK（設定アプリの標準 WPF Fluent テーマ用）と .NET 8 SDK、Visual Studio 2022 の C++ ビルドツール、CMake、NuGet 接続が必要です。[HSIS v0.8.3](https://github.com/Himeyama/hsis/tree/v0.8.3) の CLI を次のように発行し、`hsis.exe` と `Template` を一緒に保持します。アイコンは CLI のテンプレートに含まれるため、手動コピーは不要です。
 
 ```powershell
 git clone --depth 1 --branch v0.8.3 https://github.com/Himeyama/hsis.git C:\path\to\hsis

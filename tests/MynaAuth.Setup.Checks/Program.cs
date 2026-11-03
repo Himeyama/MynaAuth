@@ -17,12 +17,17 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        Application app = new();
+        App app = new();
+        app.InitializeComponent();
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         FakeBackend backend = new();
         SetupWindow window = new(backend) { ShowActivated = false };
         window.Show(); Pump();
+        foreach (string key in new[] { "TextFillColorPrimaryBrush", "TextFillColorSecondaryBrush", "CardStrokeColorDefaultBrush", "CardBackgroundFillColorDefaultBrush", "SystemFillColorCriticalBackgroundBrush" })
+            Check(window.TryFindResource(key) is Brush, $"Fluent resource resolves: {key}");
         Button next = (Button)window.FindName("Next");
+        Check(window.TryFindResource("AccentButtonStyle") is Style accentStyle && ReferenceEquals(next.Style, accentStyle),
+            "Use the Fluent accent style for the primary action in every step");
         Button back = (Button)window.FindName("Back");
         Button enroll = (Button)window.FindName("Enroll");
         PasswordBox password = (PasswordBox)window.FindName("WindowsPassword");
@@ -33,10 +38,24 @@ internal static class Program
         Check(window.FindName("RecoveryPanel") is null && windowsPanel.Visibility == Visibility.Visible,
             "Start with Windows verification without a recovery step");
         Check(window.WindowStyle == WindowStyle.None && System.Windows.Shell.WindowChrome.GetWindowChrome(window) is not null,
-            "Use custom window chrome");
+            "Use custom window chrome with Fluent controls");
+        Button maximize = (Button)window.FindName("MaximizeWindow");
+        Check(maximize.FontSize == 10 && maximize.ActualWidth == 46 && maximize.ActualHeight == 32,
+            "Caption controls use compact fixed dimensions");
+        Click(maximize);
+        Check(window.WindowState == WindowState.Maximized && (string)maximize.Content == "\uE923",
+            "Maximize switches to the restore icon");
+        Click(maximize);
+        Check(window.WindowState == WindowState.Normal && (string)maximize.Content == "\uE922",
+            "Restore switches back to the maximize icon");
+        Check((string)enroll.Content == "登録", "Use the short enrollment label");
         Check(((TextBlock)window.FindName("StepLabel0")).Text == "Windows の確認",
             "Show step names without numbers");
         ProcessStartInfo fresh = SetupBackend.CreateInstallStartInfo(false, @"C:\Synthetic Folder\app");
+        bool missingBundleRejected = false;
+        try { SetupBackend.ValidateInstallBundle(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))); }
+        catch (FileNotFoundException) { missingBundleRejected = true; }
+        Check(missingBundleRejected, "Reject incomplete installation bundles before starting PowerShell");
         ProcessStartInfo update = SetupBackend.CreateInstallStartInfo(true, @"C:\Synthetic Folder\app");
         Check(fresh.ArgumentList.Contains(@"C:\Synthetic Folder\app\Install-LogonProvider.ps1") && !fresh.ArgumentList.Contains("-RecoverySignInConfirmed"),
             "Fresh install has no recovery-confirmation requirement");
@@ -80,6 +99,16 @@ internal static class Program
         backend.InstallSucceeds = true;
         Click(next);
         Check(status.Text.Contains("サインイン オプション") && next.Visibility == Visibility.Collapsed, "Show installation completion without locking Windows");
+#pragma warning disable WPF0001
+        Check(app.ThemeMode == ThemeMode.System, "Follow the Windows theme by default");
+        foreach (ThemeMode theme in new[] { ThemeMode.Light, ThemeMode.Dark })
+        {
+            app.ThemeMode = theme;
+            Pump();
+            Capture(window, $"setup-fluent-{theme}");
+            Check(((TextBlock)window.FindName("StepLabel2")).Foreground is SolidColorBrush, $"Step text resolves in {theme}");
+        }
+#pragma warning restore WPF0001
         window.Close(); app.Shutdown();
         Console.WriteLine("Wizard checks passed. All account data is synthetic; no Windows login, enrollment, registry write or installation occurred.");
     }
