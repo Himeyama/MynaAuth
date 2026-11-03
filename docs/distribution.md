@@ -4,7 +4,7 @@ Windows 11 x64 向けの開発版です。実ログオンの検証状況は [Win
 
 ## 利用する方へ
 
-GitHub Actions の `Build MynaAuth installer` の成果物をダウンロードして ZIP を展開し、`MynaAuth-<バージョン>-win-x64-Setup.exe` を実行します。配布時は生成先フォルダー全体を ZIP にまとめ、EXE の名前を変更しないでください。署名は付いていません。チェックサムは破損検出用で、発行元を証明するものではありません。
+[GitHub Releases](https://github.com/Himeyama/MynaAuth/releases) の Assets から配布用 ZIP をダウンロードして展開し、`MynaAuth-<バージョン>-win-x64-Setup.exe` を実行します。セットアップ EXE と SHA-256 も同じ Release に添付します。配布時は生成先フォルダー全体を ZIP にまとめ、EXE の名前を変更しないでください。署名は付いていません。チェックサムは破損検出用で、発行元を証明するものではありません。
 
 Windows 標準の tar が LZMA2 の展開に対応している必要があります。.NET ランタイムは同梱します。実カードには別途、公式の64-bit JPKI 利用者ソフトと対応リーダーのドライバーが必要です。JPKI のソフトや利用者の証明書は再配布しません。
 
@@ -40,7 +40,7 @@ $env:HSIS_7ZIP_PATH = 'C:\Program Files\7-Zip\7z.exe'
 
 `Directory.Build.props` がアプリのバージョンの基準です。成果物と SHA-256 は `artifacts/installer-<識別子>/Setup-*/` に生成されます。
 
-GitHub では Actions の手動実行、またはバージョンと一致する `v0.1.0` 形式のタグの push で同じビルドを行います。結果は Actions の Artifacts に30日間保存します。GitHub Release への公開は手動です。リポジトリにはソースだけを push し、`artifacts`、キャプチャー、ログ、個人の登録情報を含めません。
+GitHub では Actions の手動実行、またはバージョンと一致する `v0.1.0` 形式のタグの push で同じビルドを行います。タグのビルド・検証に成功すると、そのタグの GitHub Release を自動作成し、配布用 ZIP・セットアップ EXE・SHA-256 を添付します。同じワークフローの再実行では添付ファイルを更新します。ブランチを選んだ手動実行では Release を作成しません。結果は Actions の Artifacts にも30日間保存します。リポジトリにはソースだけを push し、`artifacts`、キャプチャー、ログ、個人の登録情報を含めません。
 
 ## バージョンとコミット
 

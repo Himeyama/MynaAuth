@@ -5,6 +5,7 @@ OutFile "MynaAuth-${APP_VERSION}-win-x64-Setup.exe"
 InstallDir "$PROGRAMFILES64\MynaAuth"
 RequestExecutionLevel admin
 VIProductVersion "${APP_VERSION}.0"
+VIAddVersionKey /LANG=1041 "FileVersion" "${APP_VERSION}"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES

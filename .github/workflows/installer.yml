@@ -8,6 +8,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-2022
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     defaults:
       run:
         shell: pwsh
@@ -27,11 +29,13 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Check version
+        id: version
         run: |
           [xml]$props = Get-Content Directory.Build.props
           $version = [string]$props.Project.PropertyGroup.Version
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and application version must match.' }
           "APP_VERSION=$version" >> $env:GITHUB_ENV
+          "version=$version" >> $env:GITHUB_OUTPUT
       - name: Run synthetic checks
         run: |
           foreach ($project in @('MynaAuth.Checks', 'MynaAuth.Jpki.Checks', 'MynaAuth.Windows.Checks', 'MynaAuth.Setup.Checks')) {
@@ -56,3 +60,47 @@ jobs:
           path: app/artifacts/installer-*/
           if-no-files-found: error
           retention-days: 30
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: MynaAuth-${{ needs.build.outputs.version }}-win-x64
+          path: release-input
+      - name: Publish release files
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          APP_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installers = @(Get-ChildItem release-input -Recurse -Filter '*-Setup.exe')
+          if ($installers.Count -ne 1) { throw 'Expected exactly one installer' }
+          $installer = $installers[0]
+          $checksum = $installer.FullName + '.sha256'
+          $expected = (Get-Content -LiteralPath $checksum).Split(' ')[0]
+          $actual = (Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash
+          if ($actual -ne $expected) { throw 'Installer checksum mismatch' }
+          $zip = Join-Path $PWD "MynaAuth-$env:APP_VERSION-win-x64.zip"
+          Compress-Archive -Path (Join-Path $installer.DirectoryName '*') -DestinationPath $zip
+          $notes = @'
+          Windows 11 x64 向けの開発版です。HSIS v0.8.3 で生成し、.NET ランタイムを同梱しています。
+
+          配布用 ZIP を展開してセットアップを実行してください。EXE とその SHA-256 も添付しています。
+          導入・解除の手順: https://github.com/Himeyama/MynaAuth/blob/main/docs/distribution.md
+          '@
+          $notes | Set-Content release-notes.md -Encoding utf8
+          $assets = @($zip, $installer.FullName, $checksum)
+          gh release view $env:RELEASE_TAG --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:RELEASE_TAG @assets --clobber
+          } else {
+            gh release create $env:RELEASE_TAG @assets --verify-tag --title "MynaAuth $env:RELEASE_TAG" --notes-file release-notes.md
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
