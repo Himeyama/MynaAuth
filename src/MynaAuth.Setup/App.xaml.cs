@@ -8,6 +8,14 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (e.Args is ["--check-startup"])
+        {
+            // Load the real WPF window without showing it or changing enrollment.
+            SetupWindow window = new();
+            window.Close();
+            Shutdown(0);
+            return;
+        }
         if (e.Args is ["--remove-enrollment"])
         {
             int result = 0;

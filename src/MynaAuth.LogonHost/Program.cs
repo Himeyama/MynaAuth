@@ -4,6 +4,9 @@ using System.Security.Principal;
 using MynaAuth.Jpki;
 using MynaAuth.Windows;
 
+// Exercise the published runtime without accessing accounts, cards or secrets.
+if (args is ["--check-startup"]) return;
+
 byte[] pin = new byte[4];
 byte[] payload = [];
 uint status = 1;
